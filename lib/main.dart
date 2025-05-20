@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // Troque 'meu_app' pelo nome definido em pubspec.yaml
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_subtitle.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 
 void main() {
@@ -34,6 +35,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           children: [
             CustomTitle(text: "Título aqui"),
+            CustomSubtitle(text: "Subtitulo aqui"),
             CustomButton(
               label: 'Clique aqui',
               onPressed: () {
