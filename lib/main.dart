@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // Troque 'meu_app' pelo nome definido em pubspec.yaml
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,14 +30,26 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
       body: Center(
-        child: CustomButton(
-          label: 'Clique aqui',
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Botão pressionado!')),
-            );
-          },
-        ),
+        child: Row(
+          children: [
+            CustomButton(
+              label: 'Clique aqui',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Botão pressionado!')),
+                );
+              },
+            ),
+            CustomShortButton(onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Botão pressionado!')),
+                );
+              }
+            )
+
+          ],
+        )
+        
       ),
     );
   }
