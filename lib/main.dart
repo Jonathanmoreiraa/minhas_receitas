@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// Troque 'meu_app' pelo nome definido em pubspec.yaml
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
