@@ -13,7 +13,7 @@ class CustomShortButton extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromARGB(255, 255, 210, 161),
-        minimumSize: const Size(40, 40),
+        minimumSize: const Size(40, 45),
         padding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),

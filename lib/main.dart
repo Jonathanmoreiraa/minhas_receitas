@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_subtitle.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
-
-void main() {
-  runApp(const MyApp());
-}
+import 'package:minhas_receitas/presentation/screens/add_screen.dart';
+import 'package:minhas_receitas/presentation/screens/home_screen.dart';
+import 'package:minhas_receitas/presentation/screens/view_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -15,47 +9,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Minhas Receitas',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFFFFF4E8), 
       ),
-      home: const HomeScreen(),
+      initialRoute: "/",
+      routes: {
+        "/": (context) => const HomeScreen(),
+        "/add": (context) => const AddScreen(),
+        "/view": (context) => const ViewScreen(),
+      },
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: Center(
-        child: Column(
-          children: [
-            CustomTitle(text: "Título aqui"),
-            CustomSubtitle(text: "Subtitulo aqui"),
-            CustomParagraph(text: "Paragrafo aqui"),
-            CustomButton(
-              label: 'Clique aqui',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Botão pressionado!')),
-                );
-              },
-            ),
-            CustomShortButton(onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Botão pressionado!')),
-                );
-              }
-            )
-
-          ],
-        )
-        
-      ),
-    );
-  }
+void main() {
+  runApp(const MyApp());
 }
