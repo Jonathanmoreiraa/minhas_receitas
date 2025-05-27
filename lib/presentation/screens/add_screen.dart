@@ -1,13 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:minhas_receitas/data/database/db_helper.dart';
+import 'package:minhas_receitas/data/models/receita.dart';
+import 'package:minhas_receitas/data/repositories/receita_repository.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_textarea.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_input.dart';
-
-import '../../data/models/receita.dart';
-import '../../data/repositories/receita_repository.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_textarea.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
@@ -17,43 +18,38 @@ class AddScreen extends StatefulWidget {
 }
 
 class _AddScreenState extends State<AddScreen> {
-  final QuillController _controller = QuillController.basic();
   final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _ingredienteController = TextEditingController();
-
+  final QuillController _modoPreparoController = QuillController.basic();
+  List<TextEditingController> _ingredientesControllers = [];
   final ReceitaRepository _repository = ReceitaRepository();
-
-  List<Receita> _receitas = [];
 
   @override
   void initState() {
     super.initState();
-    _carregarReceitas();
-  }
-
-  Future<void> _carregarReceitas() async {
-    final receitas = await _repository.getReceitas();
-    setState(() {
-      _receitas = receitas;
-    });
+    _ingredientesControllers.add(TextEditingController());
   }
 
   void _salvarReceita() async {
     final nome = _nomeController.text.trim();
-    final ingrediente = _ingredienteController.text.trim();
-    final modoPreparoJson = _controller.document.toDelta().toJson();
+    final modoPreparo = jsonEncode(_modoPreparoController.document.toDelta().toJson());
+    final ingredientes = _ingredientesControllers
+        .map((c) => c.text.trim())
+        .where((text) => text.isNotEmpty)
+        .toList();
 
-    if (nome.isEmpty || ingrediente.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos')),
-      );
+    if (nome.isEmpty || ingredientes.isEmpty || modoPreparo.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Preencha todos os campos')),
+        );
+      }
       return;
     }
 
     final receita = Receita(
       nome: nome,
-      ingredientes: [ingrediente],
-      modoPreparoJson: modoPreparoJson.toString(),
+      ingredientes: ingredientes,
+      modoPreparoJson: modoPreparo,
     );
 
     await _repository.insertReceita(receita);
@@ -62,62 +58,71 @@ class _AddScreenState extends State<AddScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Receita salva com sucesso!')),
       );
-      _nomeController.clear();
-      _ingredienteController.clear();
-      _controller.document = Document();
-      await _carregarReceitas(); // Atualiza lista depois de salvar
+      Navigator.of(context).pushReplacementNamed('/');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Widget svg = SvgPicture.asset(
-      'chef.svg',
-      semanticsLabel: 'Chef',
-    );
-
     return Scaffold(
+      appBar: AppBar(
+        title: const Text(''),
+        backgroundColor: const Color(0xFFFFF4E8),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            svg,
-            const SizedBox(height: 20),
-            const CustomParagraph(
-              text: 'Cadastrar nova receita de teste',
+            const CustomTitle(
+              text: 'Cadastrar nova receita',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             CustomInput(
               controller: _nomeController,
-              placeholder: 'Nome da Receita',
+              placeholder: "Nome da receita",
             ),
             const SizedBox(height: 16),
-            CustomInput(
-              controller: _ingredienteController,
-              placeholder: 'Ingrediente (um só pra teste)',
+            Column(
+              children: List.generate(_ingredientesControllers.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: CustomInput(
+                          controller: _ingredientesControllers[index],
+                          placeholder: 'Ingrediente',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (index == _ingredientesControllers.length - 1)
+                        Expanded(
+                          flex: 1,
+                          child: CustomShortButton(
+                            onPressed: () {
+                              setState(() {
+                                _ingredientesControllers.add(TextEditingController());
+                              });
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
-              child: CustomRichTextEditor(controller: _controller),
+              height: 400,
+              child: CustomRichTextEditor(controller: _modoPreparoController),
             ),
             const SizedBox(height: 16),
             CustomButton(
-              label: 'Salvar Receita',
               onPressed: _salvarReceita,
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              'Receitas salvas:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            // Lista simples com nomes das receitas
-            ..._receitas.map(
-              (r) => ListTile(
-                title: Text(r.nome),
-              ),
+              label: "Salvar Receita",
             ),
           ],
         ),
