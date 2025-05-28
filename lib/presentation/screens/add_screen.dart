@@ -56,7 +56,14 @@ class _AddScreenState extends State<AddScreen> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Receita salva com sucesso!')),
+        const SnackBar(
+          content: Text(
+            'Receita salva com sucesso!', 
+            style: TextStyle(color: Color.fromARGB(255, 105, 105, 105), fontWeight: FontWeight.bold),
+          ), 
+          backgroundColor: Color.fromARGB(255, 161, 255, 177),
+        ),
+
       );
       Navigator.of(context).pushReplacementNamed('/');
     }
