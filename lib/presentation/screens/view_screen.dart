@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:minhas_receitas/data/models/receita.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_subtitle.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_textarea.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 
 class ViewScreen extends StatefulWidget {
@@ -12,11 +13,32 @@ class ViewScreen extends StatefulWidget {
   State<ViewScreen> createState() => _ViewScreenState();
 }
 class _ViewScreenState extends State<ViewScreen> {
-  final QuillController _controller = QuillController.basic();
   bool state = false;
 
   @override
   Widget build(BuildContext context) {
+    final receita = (ModalRoute.of(context)?.settings.arguments ?? <String, dynamic>{}) as Receita;
+    
+    final List<dynamic> originalDelta = jsonDecode(receita.modoPreparoJson);
+    final List<dynamic> greenDelta = originalDelta.map((op) {
+      if (op is Map<String, dynamic> && op.containsKey('insert')) {
+        final insert = op['insert'];
+        final attributes = Map<String, dynamic>.from(op['attributes'] ?? {});
+        attributes['color'] = '#7e634c';
+        return {
+          'insert': insert,
+          'attributes': attributes,
+        };
+      }
+      return op;
+    }).toList();
+    
+    final QuillController controller = QuillController(
+      document: Document.fromJson(greenDelta),
+      selection: const TextSelection.collapsed(offset: 0),
+      readOnly: true
+    );
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -59,7 +81,7 @@ class _ViewScreenState extends State<ViewScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          CustomTitle(text: "Torta de frango"),
+                          CustomTitle(text: receita.nome),
                           IconButton(
                             icon: Icon(Icons.edit), 
                             color: Color.fromARGB(255, 126, 99, 76),
@@ -72,13 +94,12 @@ class _ViewScreenState extends State<ViewScreen> {
                       SizedBox(height: 16),
                       CustomSubtitle(text: 'Ingredientes'),
                       SizedBox(height: 8),
-                      CustomParagraph(text: "Primeiro ingrediente"),
-                      CustomParagraph(text: "Primeiro ingrediente"),
-                      CustomParagraph(text: "Primeiro ingrediente"),
+                      ...receita.ingredientes.map((ingrediente) => CustomParagraph(text: '\u2022 $ingrediente')),
                       SizedBox(height: 16),
                       CustomSubtitle(text: 'Modo de preparo'),
-                      SizedBox(height: 8),
-                      CustomParagraph(text: "Em um recipiente, peneire a farinha, o sal e misture a manteiga com os dedos até formar uma farofa. Junte o ovo batido na mistura, utilizando uma espátula até obter uma massa firme e lisa, dando o ponto com a água fria e, se necessário, utilize 1 ou 2 colheres a mais. Leve à geladeira embrulhada em plástico-filme por no mínimo 30 minutos."),
+                      QuillEditor.basic(
+                        controller: controller,
+                      ),
                       SizedBox(height: 16),
                     ],
                   ),

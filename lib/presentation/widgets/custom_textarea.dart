@@ -24,7 +24,7 @@ class _CustomRichTextEditorState extends State<CustomRichTextEditor> {
             showListBullets: true,
             showBoldButton: true,
             showItalicButton: true,
-            showColorButton: true,
+            showColorButton: false,
             showBackgroundColorButton: true,
             showUnderLineButton: true,
             showFontFamily: true,
