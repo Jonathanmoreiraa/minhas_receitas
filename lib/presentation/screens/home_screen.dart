@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:minhas_receitas/data/models/receita.dart';
 import 'package:minhas_receitas/data/repositories/receita_repository.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_input.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 
@@ -15,7 +16,10 @@ class HomeScreen extends StatefulWidget {
 }
 class _HomeScreenState extends State<HomeScreen> {
   final ReceitaRepository _repository = ReceitaRepository();
+  final TextEditingController _receitasController = TextEditingController(); 
   List<Receita> _receitas = [];
+  List<Receita> _receitasBanco = [];
+  var filtroVazio = false;
 
   @override
   void initState() {
@@ -32,7 +36,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _carregarReceitas() async {
     final receitas = await _repository.getReceitas();
     setState(() {
+      filtroVazio = false;
       _receitas = receitas;
+      _receitasController.text = "";
+    });
+  }
+
+  Future<void> _filtrarReceita() async {
+    final receita = await _repository.getReceita(_receitasController.text.trim());
+    setState(() {
+      if (receita.isNotEmpty) {
+        _receitas = receita;
+      }else{
+        filtroVazio = true;
+        _receitas = [];
+      }
     });
   }
 
@@ -62,6 +80,54 @@ class _HomeScreenState extends State<HomeScreen> {
           fontWeight: FontWeight.bold,
           color: Color.fromARGB(255, 126, 99, 76),
         ),
+        actions: [
+          if (_receitas.isNotEmpty || filtroVazio) 
+            Padding(
+              padding: EdgeInsets.fromLTRB(8, 0, 16, 0), 
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 255, 210, 161),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)
+                  )
+                ),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: Text('Filtrar receitas'),
+                      content: CustomInput(
+                        placeholder: "Informe o nome da receita",
+                        controller: _receitasController,
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            _carregarReceitas();
+                          },
+                          child: Text('Limpar filtro', style: TextStyle(color: Color.fromARGB(255, 126, 99, 76))),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancelar', style: TextStyle(color: Color.fromARGB(255, 126, 99, 76))),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            _filtrarReceita();
+                          },
+                          child: Text('Filtrar', style: TextStyle(color: Color.fromARGB(255, 126, 99, 76))),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Icon(Icons.filter_list)
+              ),
+            ),
+        ],
       ),
       body: Builder(
         builder: (context) {
@@ -196,6 +262,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 }),
               ],
             );
+          } else if (filtroVazio) {
+            return Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 50,
+                    child: CustomParagraph(
+                      text: 'Nenhuma receita encontrada para o filtro informado!',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  CustomButton(
+                    label: 'Remover filtro',
+                    onPressed: () {
+                      _carregarReceitas();
+                    },
+                  ),
+                ],
+              ),
+            );
           } else {
             return Center(
               child: Column(
@@ -218,13 +307,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () async {
                       await Navigator.pushNamed(context, '/add');
                       _carregarReceitas();
-                    },
-                  ),
-                 SizedBox(height: 40),
-                  CustomButton(
-                    label: 'Ver receita',
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/view');
                     },
                   ),
                 ],

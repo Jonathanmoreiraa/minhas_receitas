@@ -22,7 +22,7 @@ class CustomShortButton extends StatelessWidget {
       onPressed: onPressed,
       child: const Icon(
         Icons.check,
-        color: Color.fromARGB(255, 126, 99, 76), // mesma cor que você usava no texto
+        color: Color.fromARGB(255, 126, 99, 76),
         size: 24,
       ),
     );

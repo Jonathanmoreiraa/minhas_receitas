@@ -13,6 +13,16 @@ class ReceitaRepository {
     return result.map((map) => Receita.fromMap(map)).toList();
   }
 
+  Future<List<Receita>> getReceita(String receita) async {
+    final db = await DBHelper.database;
+    final result = await db.query(
+      'receitas',
+      where: 'nome LIKE ?',
+      whereArgs: ["%$receita%"],
+    );
+    return result.map((map) => Receita.fromMap(map)).toList();
+  }
+
   Future<Receita?> getReceitaById(int id) async {
     final db = await DBHelper.database;
     final result = await db.query(
