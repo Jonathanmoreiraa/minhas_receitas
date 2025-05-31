@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:minhas_receitas/data/database/db_helper.dart';
 import 'package:minhas_receitas/data/models/receita.dart';
 import 'package:minhas_receitas/data/repositories/receita_repository.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
@@ -9,6 +8,12 @@ import 'package:minhas_receitas/presentation/widgets/custom_input.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_short_button.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_textarea.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
+import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'package:dotted_border/dotted_border.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
@@ -22,6 +27,8 @@ class _AddScreenState extends State<AddScreen> {
   final QuillController _modoPreparoController = QuillController.basic();
   List<TextEditingController> _ingredientesControllers = [];
   final ReceitaRepository _repository = ReceitaRepository();
+  File? _imagemCapa;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -31,11 +38,14 @@ class _AddScreenState extends State<AddScreen> {
 
   void _salvarReceita() async {
     final nome = _nomeController.text.trim();
-    final modoPreparo = jsonEncode(_modoPreparoController.document.toDelta().toJson());
-    final ingredientes = _ingredientesControllers
-        .map((c) => c.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
+    final modoPreparo = jsonEncode(
+      _modoPreparoController.document.toDelta().toJson(),
+    );
+    final ingredientes =
+        _ingredientesControllers
+            .map((c) => c.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
 
     if (nome.isEmpty || ingredientes.isEmpty || modoPreparo.isEmpty) {
       if (context.mounted) {
@@ -50,6 +60,7 @@ class _AddScreenState extends State<AddScreen> {
       nome: nome,
       ingredientes: ingredientes,
       modoPreparoJson: modoPreparo,
+      imagemCapaPath: _imagemCapa?.path,
     );
 
     await _repository.insertReceita(receita);
@@ -58,14 +69,36 @@ class _AddScreenState extends State<AddScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Receita salva com sucesso!', 
-            style: TextStyle(color: Color.fromARGB(255, 105, 105, 105), fontWeight: FontWeight.bold),
-          ), 
+            'Receita salva com sucesso!',
+            style: TextStyle(
+              color: Color.fromARGB(255, 105, 105, 105),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           backgroundColor: Color.fromARGB(255, 161, 255, 177),
         ),
-
       );
       Navigator.of(context).pushReplacementNamed('/');
+    }
+  }
+
+  Future<void> _selecionarImagem() async {
+    final XFile? imagemSelecionada = await _picker.pickImage(
+      source: ImageSource.gallery, // ou ImageSource.camera
+      maxHeight: 600,
+      maxWidth: 800,
+    );
+
+    if (imagemSelecionada != null) {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String nomeArquivo = path.basename(imagemSelecionada.path);
+      final File imagemSalva = await File(
+        imagemSelecionada.path,
+      ).copy('${appDir.path}/$nomeArquivo');
+
+      setState(() {
+        _imagemCapa = imagemSalva;
+      });
     }
   }
 
@@ -111,7 +144,9 @@ class _AddScreenState extends State<AddScreen> {
                           child: CustomShortButton(
                             onPressed: () {
                               setState(() {
-                                _ingredientesControllers.add(TextEditingController());
+                                _ingredientesControllers.add(
+                                  TextEditingController(),
+                                );
                               });
                             },
                           ),
@@ -127,10 +162,42 @@ class _AddScreenState extends State<AddScreen> {
               child: CustomRichTextEditor(controller: _modoPreparoController),
             ),
             const SizedBox(height: 16),
-            CustomButton(
-              onPressed: _salvarReceita,
-              label: "Salvar Receita",
+            const SizedBox(height: 16),
+            Text(
+              'Foto do prato',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _selecionarImagem,
+              child:
+                  _imagemCapa != null
+                      ? Image.file(_imagemCapa!, height: 200, fit: BoxFit.cover)
+                      : Container(
+                        height: 200,
+                        width: double.infinity,
+                        child: DottedBorder(
+                          options: RectDottedBorderOptions(
+                            dashPattern: [10, 5],
+                            strokeWidth: 2,
+                            padding: EdgeInsets.all(16),
+                            color: Color.fromARGB(166, 126, 99, 76),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                color: Color.fromARGB(178, 157, 139, 76),
+                                size: 32,
+                              ),
+                              SizedBox(width: 8),
+                              CustomParagraph(text: "Enviar foto da receita pronta"),
+                            ],
+                          ),
+                        ),
+                      ),
+            ),
+            CustomButton(onPressed: _salvarReceita, label: "Salvar Receita"),
           ],
         ),
       ),
