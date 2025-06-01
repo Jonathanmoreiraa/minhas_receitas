@@ -25,7 +25,7 @@ class AddScreen extends StatefulWidget {
 class _AddScreenState extends State<AddScreen> {
   final TextEditingController _nomeController = TextEditingController();
   final QuillController _modoPreparoController = QuillController.basic();
-  List<TextEditingController> _ingredientesControllers = [];
+  final List<TextEditingController> _ingredientesControllers = [];
   final ReceitaRepository _repository = ReceitaRepository();
   File? _imagemCapa;
   final ImagePicker _picker = ImagePicker();
@@ -83,8 +83,9 @@ class _AddScreenState extends State<AddScreen> {
   }
 
   Future<void> _selecionarImagem() async {
+    print("clicou");
     final XFile? imagemSelecionada = await _picker.pickImage(
-      source: ImageSource.gallery, // ou ImageSource.camera
+      source: ImageSource.gallery,
       maxHeight: 600,
       maxWidth: 800,
     );
@@ -106,100 +107,112 @@ class _AddScreenState extends State<AddScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: const Color(0xFFFFF4E8),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          children: [
-            const CustomTitle(
-              text: 'Cadastrar nova receita',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            CustomInput(
-              controller: _nomeController,
-              placeholder: "Nome da receita",
-            ),
-            const SizedBox(height: 16),
-            Column(
-              children: List.generate(_ingredientesControllers.length, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: CustomInput(
-                          controller: _ingredientesControllers[index],
-                          placeholder: 'Ingrediente',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (index == _ingredientesControllers.length - 1)
-                        Expanded(
-                          flex: 1,
-                          child: CustomShortButton(
-                            onPressed: () {
-                              setState(() {
-                                _ingredientesControllers.add(
-                                  TextEditingController(),
-                                );
-                              });
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 400,
-              child: CustomRichTextEditor(controller: _modoPreparoController),
-            ),
-            const SizedBox(height: 16),
-            const SizedBox(height: 16),
-            Text(
-              'Foto do prato',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _selecionarImagem,
-              child:
-                  _imagemCapa != null
-                      ? Image.file(_imagemCapa!, height: 200, fit: BoxFit.cover)
-                      : Container(
-                        height: 200,
-                        width: double.infinity,
-                        child: DottedBorder(
-                          options: RectDottedBorderOptions(
-                            dashPattern: [10, 5],
-                            strokeWidth: 2,
-                            padding: EdgeInsets.all(16),
-                            color: Color.fromARGB(166, 126, 99, 76),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.camera_alt,
-                                color: Color.fromARGB(178, 157, 139, 76),
-                                size: 32,
-                              ),
-                              SizedBox(width: 8),
-                              CustomParagraph(text: "Enviar foto da receita pronta"),
-                            ],
-                          ),
-                        ),
-                      ),
-            ),
-            CustomButton(onPressed: _salvarReceita, label: "Salvar Receita"),
-          ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: CustomTitle(
+          text: 'Cadastrar nova receita',
+          textAlign: TextAlign.end,
         ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        children: [
+          CustomInput(
+            controller: _nomeController,
+            placeholder: "Nome da receita",
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(_ingredientesControllers.length, (index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: CustomInput(
+                        controller: _ingredientesControllers[index],
+                        placeholder: 'Ingrediente',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (index == _ingredientesControllers.length - 1) 
+                      Expanded(
+                        flex: 1,
+                        child: CustomShortButton(
+                          onPressed: () {
+                            setState(() {
+                              _ingredientesControllers.add(
+                                TextEditingController(),
+                              );
+                            });
+                          },
+                          icon: "",
+                        ),
+                      ),
+                    
+                    if (index != _ingredientesControllers.length - 1) 
+                      Expanded(
+                        flex: 1,
+                        child: CustomShortButton(
+                          onPressed: () {
+                            setState(() {
+                              _ingredientesControllers.removeAt(index);
+                            });
+                          },
+                          icon: "remove",
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 400,
+            child: CustomRichTextEditor(controller: _modoPreparoController),
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: _selecionarImagem,
+            child: SizedBox(
+              width: double.infinity,
+              child: DottedBorder(
+                options: RectDottedBorderOptions(
+                  dashPattern: [10, 5],
+                  strokeWidth: 2,
+                  padding: EdgeInsets.all(16),
+                  color: Color.fromARGB(166, 126, 99, 76),
+                ),
+                child: Builder(
+                  builder: (context) {
+                    if (_imagemCapa == null) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_a_photo,
+                            color: Color.fromARGB(178, 157, 139, 76),
+                            size: 32,
+                          ),
+                          SizedBox(width: 8),
+                          CustomParagraph(text: "Enviar foto da receita pronta"),
+                        ],
+                      );
+                    } else {
+                      return Image.file(_imagemCapa!, height: 200, fit: BoxFit.cover, alignment: Alignment.center,);
+                    }
+                  }
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 24),
+          CustomButton(onPressed: _salvarReceita, label: "Salvar Receita"),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:minhas_receitas/presentation/screens/add_screen.dart';
+import 'package:minhas_receitas/presentation/screens/edit_screen.dart';
 import 'package:minhas_receitas/presentation/screens/home_screen.dart';
 import 'package:minhas_receitas/presentation/screens/view_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         "/": (context) => const HomeScreen(),
         "/add": (context) => const AddScreen(),
         "/view": (context) => const ViewScreen(),
+        "/edit": (context) => const EditScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

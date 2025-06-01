@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,7 +8,6 @@ import 'package:minhas_receitas/data/repositories/receita_repository.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_button.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_input.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
-import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final ReceitaRepository _repository = ReceitaRepository();
   final TextEditingController _receitasController = TextEditingController(); 
   List<Receita> _receitas = [];
-  List<Receita> _receitasBanco = [];
   var filtroVazio = false;
 
   @override
@@ -193,9 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 topLeft: Radius.circular(8),
                                 bottomLeft: Radius.circular(8),
                               ),
-                              child: Image.network(
-                                'https://picsum.photos/500/300?image=63',
-                                fit: BoxFit.cover,
+                              child: Image.file(
+                                File(receita.imagemCapaPath ?? ""),
+                                fit: BoxFit.contain,
                                 width: 117,
                                 height: 80,
                               ),
@@ -290,10 +290,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                 SizedBox(height: 50),
-                  SvgPicture.asset('assets/chef.svg', semanticsLabel: 'Chef'),
-                 SizedBox(height: 40),
-                 SizedBox(
+                  SizedBox(height: 50),
+                  svg,
+                  SizedBox(height: 40),
+                  SizedBox(
                     width: 260,
                     height: 50,
                     child: CustomParagraph(
@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                 SizedBox(height: 40),
+                  SizedBox(height: 40),
                   CustomButton(
                     label: 'Nova receita',
                     onPressed: () async {

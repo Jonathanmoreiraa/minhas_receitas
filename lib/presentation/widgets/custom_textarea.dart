@@ -48,7 +48,7 @@ class _CustomRichTextEditorState extends State<CustomRichTextEditor> {
         ),
         const SizedBox(height: 8),
         Container(
-          height: 300,
+          height: 240,
           decoration: BoxDecoration(
             border: Border.all(color: Color.fromARGB(255, 126, 99, 76)),
             borderRadius: BorderRadius.circular(8),

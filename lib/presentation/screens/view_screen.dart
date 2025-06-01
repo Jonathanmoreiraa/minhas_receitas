@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:minhas_receitas/data/models/receita.dart';
+import 'package:minhas_receitas/data/repositories/receita_repository.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_paragraph.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_subtitle.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
@@ -17,13 +19,24 @@ class ViewScreen extends StatefulWidget {
   @override
   State<ViewScreen> createState() => _ViewScreenState();
 }
-class _ViewScreenState extends State<ViewScreen> {
-  bool state = false;
-  final ScreenshotController _screenshotController = ScreenshotController();
 
-  Future<void> _exportToPdf() async {
+class _ViewScreenState extends State<ViewScreen> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+  final ReceitaRepository _repository = ReceitaRepository();
+
+  Future<void> _exportToPdf(Receita receita) async {
     try {
       final Uint8List? imageBytes = await _screenshotController.capture();
+      final List<pw.Widget> ingredientes = receita.ingredientes.map(
+        (ingrediente) => pw.Bullet(text: ingrediente),
+      ).toList();
+      
+      final List<dynamic> modoPreparoJson = jsonDecode(receita.modoPreparoJson);
+      final String textoModoPreparo = modoPreparoJson
+          .whereType<Map<String, dynamic>>()
+          .map((e) => e['insert'] ?? '')
+          .join()
+          .toString();
 
       if (imageBytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -35,13 +48,18 @@ class _ViewScreenState extends State<ViewScreen> {
       final pdf = pw.Document();
 
       pdf.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Image(pw.MemoryImage(imageBytes), fit: pw.BoxFit.contain),
-            );
-          },
+          build: (pw.Context context) => [
+            pw.SizedBox(height: 16),
+            pw.Text(receita.nome, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+            pw.Text('Ingredientes', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            ...ingredientes,
+            pw.SizedBox(height: 16),
+            pw.Text('Modo de Preparo', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.Text(textoModoPreparo.trim()),
+          ],
         ),
       );
 
@@ -55,60 +73,74 @@ class _ViewScreenState extends State<ViewScreen> {
     }
   }
 
+  Future<Receita> getReceita() async {
+    final receita = ModalRoute.of(context)?.settings.arguments as Receita;
+    final receitaBanco = await _repository.getReceita(receita.id.toString());
+    return receitaBanco.isNotEmpty ? receitaBanco[0] : receita;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final receita = (ModalRoute.of(context)?.settings.arguments ?? <String, dynamic>{}) as Receita;
-    
-    final List<dynamic> originalDelta = jsonDecode(receita.modoPreparoJson);
-    final List<dynamic> greenDelta = originalDelta.map((op) {
-      if (op is Map<String, dynamic> && op.containsKey('insert')) {
-        final insert = op['insert'];
-        final attributes = Map<String, dynamic>.from(op['attributes'] ?? {});
-        attributes['color'] = '#7e634c';
-        return {
-          'insert': insert,
-          'attributes': attributes,
-        };
-      }
-      return op;
-    }).toList();
-    
-    final QuillController controller = QuillController(
-      document: Document.fromJson(greenDelta),
-      selection: const TextSelection.collapsed(offset: 0),
-      readOnly: true
-    );
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(100, 0, 0, 0),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: Colors.white,),
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             tooltip: 'Exportar como PDF',
-            onPressed: _exportToPdf,
+            onPressed: () async {
+              final receita = await getReceita();
+              _exportToPdf(receita);
+            },
           ),
         ],
       ),
-      body: Screenshot(
-        controller: _screenshotController,
-        child: Stack(
-          children: [
-            SingleChildScrollView(
+      body: FutureBuilder<Receita>(
+        future: getReceita(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erro: ${snapshot.error}'));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text('Receita não encontrada'));
+          }
+
+          final receita = snapshot.data!;
+          final List<dynamic> originalDelta = jsonDecode(receita.modoPreparoJson);
+          final List<dynamic> greenDelta = originalDelta.map((op) {
+            if (op is Map<String, dynamic> && op.containsKey('insert')) {
+              final insert = op['insert'];
+              final attributes = Map<String, dynamic>.from(op['attributes'] ?? {});
+              attributes['color'] = '#7e634c';
+              return {
+                'insert': insert,
+                'attributes': attributes,
+              };
+            }
+            return op;
+          }).toList();
+
+          final QuillController controller = QuillController(
+            document: Document.fromJson(greenDelta),
+            selection: const TextSelection.collapsed(offset: 0),
+            readOnly: true,
+          );
+
+          return Screenshot(
+            controller: _screenshotController,
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    children: [
-                      Image.network(
-                        'https://picsum.photos/500/300?image=63',
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                      ),
-                    ],
+                  Image.file(
+                    File(receita.imagemCapaPath ?? ""),
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                    height: 300,
                   ),
                   Container(
                     width: double.infinity,
@@ -123,22 +155,19 @@ class _ViewScreenState extends State<ViewScreen> {
                             IconButton(
                               icon: const Icon(Icons.edit),
                               color: const Color.fromARGB(255, 126, 99, 76),
-                              onPressed: () => setState(() {
-                                state = !state;
-                              }),
-                            )
+                              onPressed: () => Navigator.pushNamed(context, '/edit', arguments: receita),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
                         const CustomSubtitle(text: 'Ingredientes'),
                         const SizedBox(height: 8),
-                        ...receita.ingredientes
-                            .map((ingrediente) => CustomParagraph(text: '\u2022 $ingrediente')),
+                        ...receita.ingredientes.map(
+                          (ingrediente) => CustomParagraph(text: '\u2022 $ingrediente'),
+                        ),
                         const SizedBox(height: 16),
                         const CustomSubtitle(text: 'Modo de preparo'),
-                        QuillEditor.basic(
-                          controller: controller,
-                        ),
+                        QuillEditor.basic(controller: controller),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -146,8 +175,8 @@ class _ViewScreenState extends State<ViewScreen> {
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
