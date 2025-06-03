@@ -83,7 +83,6 @@ class _AddScreenState extends State<AddScreen> {
   }
 
   Future<void> _selecionarImagem() async {
-    print("clicou");
     final XFile? imagemSelecionada = await _picker.pickImage(
       source: ImageSource.gallery,
       maxHeight: 600,

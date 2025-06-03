@@ -33,7 +33,6 @@ Aplicativo construído com **Flutter** e gerenciado por **Dart**. Algumas das pr
 | `sqflite`              | Banco de dados local (SQLite)                  |
 | `path_provider`        | Acesso a diretórios do sistema                  |
 | `pdf` / `printing`     | Geração e impressão/exportação de PDFs          |
-| `screenshot`           | Captura de tela                                |
 | `image_picker`         | Seleção de imagens da galeria ou câmera        |
 
 ## 📂 Estrutura de Arquivos

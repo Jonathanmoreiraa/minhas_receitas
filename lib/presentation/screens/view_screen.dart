@@ -10,7 +10,6 @@ import 'package:minhas_receitas/presentation/widgets/custom_subtitle.dart';
 import 'package:minhas_receitas/presentation/widgets/custom_title.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class ViewScreen extends StatefulWidget {
@@ -21,12 +20,10 @@ class ViewScreen extends StatefulWidget {
 }
 
 class _ViewScreenState extends State<ViewScreen> {
-  final ScreenshotController _screenshotController = ScreenshotController();
   final ReceitaRepository _repository = ReceitaRepository();
 
   Future<void> _exportToPdf(Receita receita) async {
     try {
-      final Uint8List? imageBytes = await _screenshotController.capture();
       final List<pw.Widget> ingredientes = receita.ingredientes.map(
         (ingrediente) => pw.Bullet(text: ingrediente),
       ).toList();
@@ -37,13 +34,6 @@ class _ViewScreenState extends State<ViewScreen> {
           .map((e) => e['insert'] ?? '')
           .join()
           .toString();
-
-      if (imageBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao capturar a tela')),
-        );
-        return;
-      }
 
       final pdf = pw.Document();
 
@@ -130,50 +120,47 @@ class _ViewScreenState extends State<ViewScreen> {
             readOnly: true,
           );
 
-          return Screenshot(
-            controller: _screenshotController,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.file(
-                    File(receita.imagemCapaPath ?? ""),
-                    fit: BoxFit.contain,
-                    width: double.infinity,
-                    height: 300,
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.file(
+                  File(receita.imagemCapaPath ?? ""),
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: 300,
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CustomTitle(text: receita.nome),
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            color: const Color.fromARGB(255, 126, 99, 76),
+                            onPressed: () => Navigator.pushNamed(context, '/edit', arguments: receita),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const CustomSubtitle(text: 'Ingredientes'),
+                      const SizedBox(height: 8),
+                      ...receita.ingredientes.map(
+                        (ingrediente) => CustomParagraph(text: '\u2022 $ingrediente'),
+                      ),
+                      const SizedBox(height: 16),
+                      const CustomSubtitle(text: 'Modo de preparo'),
+                      QuillEditor.basic(controller: controller),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            CustomTitle(text: receita.nome),
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              color: const Color.fromARGB(255, 126, 99, 76),
-                              onPressed: () => Navigator.pushNamed(context, '/edit', arguments: receita),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const CustomSubtitle(text: 'Ingredientes'),
-                        const SizedBox(height: 8),
-                        ...receita.ingredientes.map(
-                          (ingrediente) => CustomParagraph(text: '\u2022 $ingrediente'),
-                        ),
-                        const SizedBox(height: 16),
-                        const CustomSubtitle(text: 'Modo de preparo'),
-                        QuillEditor.basic(controller: controller),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  )
-                ],
-              ),
+                )
+              ],
             ),
           );
         },

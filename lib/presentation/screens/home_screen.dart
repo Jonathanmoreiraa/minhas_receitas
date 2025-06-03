@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         automaticallyImplyLeading: false,
         elevation: 0,
-        title: Text("Minhas Receitas"),
+        title: _receitas.isNotEmpty ? Text("Minhas Receitas") : Text(""),
         titleTextStyle: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
